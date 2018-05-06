@@ -1,0 +1,143 @@
+#define SENSOR_1 Sensor(S1)
+#define setpoint 22
+float right,straight;
+float t1,time;
+
+
+/*  function for scanning sensor values */
+
+float scanning()
+{
+RotateMotor(OUT_A,20,90);
+Wait(100);
+right = SensorUS(IN_4);
+return right;
+}
+
+float scanning1()
+{
+RotateMotor(OUT_A,20,-180);
+Wait(100);
+straight = SensorUS(IN_4);
+return straight;
+}
+
+
+task main()
+{
+SetSensorLowspeed(IN_4);
+SetSensorType (IN_1,IN_TYPE_LIGHT_ACTIVE);
+SetSensorLight(IN_1,IN_MODE_PCTFULLSCALE);
+ResetSensor (IN_1);
+float error;
+float kp=1;
+float ki=0.02;
+float kd=0.1;
+float turn;
+float offset = 48;
+float Tp = 30;
+float integral = 0;
+float lasterror = 0;
+float derivative = 0;
+int count;
+while(true)
+{
+while (SensorUS(IN_4)>=21)
+{
+int count =0;
+label:
+error = Sensor(S1)-offset;
+integral = integral+error;
+derivative = error-lasterror;
+turn = (kp*error)+(ki*integral)+(kd*derivative);
+/*turn = turn/100; */
+OnFwd(OUT_B,Tp+turn);
+OnFwd(OUT_C,Tp-turn);
+lasterror = error;
+}
+Off(OUT_BC);
+scanning();
+scanning1();
+RotateMotor(OUT_A,20,90);
+while (right >=26 && straight>=26)
+{
+OnFwd(OUT_B,30);
+Wait(300);
+OnFwd(OUT_B,30);
+ until(Sensor(S1)<=40);
+OnFwd(OUT_BC,30);
+Wait(300);
+Off(OUT_BC);
+goto label;
+}
+while(right <=26 && straight>=26)
+{
+OnFwd(OUT_B,30);
+Wait(300);
+OnFwd(OUT_B,30);
+until(Sensor(S1)<=40);
+OnFwd(OUT_BC,30);
+Wait(300);
+Off(OUT_BC);
+goto label;
+}
+while(right <=26 && straight<=26)
+{
+OnFwdSync(OUT_BC,30,90);
+Wait(1000);
+OnFwdSync(OUT_BC,30,90);
+until(Sensor(S1)<=40);
+Off(OUT_BC);
+goto label;
+}
+while(right >=26 && straight<=26)
+{
+OnFwd(OUT_C,30);
+Wait(600);
+OnFwd(OUT_C,35);
+until(Sensor(S1)<=40);
+OnFwd(OUT_BC,30);
+Wait(300);
+Off(OUT_BC);
+goto label;
+}
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*void tilt()
+{
+if (Sensor(S1) >=40)
+{
+             t1 = CurrentTick();
+             OnRev (OUT_C , 25);
+             OnFwd (OUT_B , 25);
+             Wait(600);
+             time = (CurrentTick() - t1);
+            if (SENSOR_1 >52 && time > 600);
+            {
+             OnRev (OUT_B , 30);
+             OnFwd (OUT_C , 30);
+             until (SENSOR_1 <= 40);
+            Off (OUT_BC);
+            }
+}
+} */
+
